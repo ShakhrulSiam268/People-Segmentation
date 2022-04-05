@@ -8,9 +8,16 @@ from people_segmentation.pre_trained_models import create_model
 
 
 class SegmentPerson:
-    def __init__(self):
+    def __init__(self, output_type=None):
         self.model = create_model("Unet_2020-07-20")
         self.model.eval()
+        valid_list = ['marked', 'cropped']
+        if output_type in valid_list:
+            self.out_type = output_type
+        else:
+            print('Select a valid Type : ', valid_list)
+            print("Default Mode : marked")
+            self.out_type = 'marked'
 
     def semantic_segment(self, filename):
         image = load_rgb(filename)
@@ -22,15 +29,21 @@ class SegmentPerson:
             prediction = self.model(x)[0][0]
         mask = (prediction > 0).cpu().numpy().astype(np.uint8)
         mask = unpad(mask, pads)
-        dst = cv2.addWeighted(image, 1, (cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB) * (0, 255, 0)).astype(np.uint8), 0.5, 0)
-        return dst
+        mask3d = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
+        if self.out_type == 'cropped':
+            cropped_img = image * mask3d
+            cropped_img = cv2.cvtColor(cropped_img, cv2.COLOR_RGB2BGR)
+            return cropped_img
+        else:
+            marked_img = cv2.addWeighted(image, 0.5, (cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB) * (0, 255, 0)).astype(np.uint8), 0.5, 0)
+            return marked_img
 
 
 def main():
     filename = 'test.jpg'
-    sp = SegmentPerson()
+    sp = SegmentPerson(output_type='cropped')
     out = sp.semantic_segment(filename)
-    cv2.imshow('Segmented Image',out)
+    cv2.imshow('Segmented Image', out)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
