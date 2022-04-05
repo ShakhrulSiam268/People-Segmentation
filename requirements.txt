@@ -1,0 +1,5 @@
+albumentations
+opencv-python
+torch
+iglovikov_helper_functions
+people_segmentation
