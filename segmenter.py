@@ -29,6 +29,8 @@ class SegmentPerson:
             prediction = self.model(x)[0][0]
         mask = (prediction > 0).cpu().numpy().astype(np.uint8)
         mask = unpad(mask, pads)
+        if sum(sum(mask)) < 100:
+            mask = np.ones(mask.shape).astype(np.uint8)
         mask3d = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
         if self.out_type == 'cropped':
             cropped_img = image * mask3d
